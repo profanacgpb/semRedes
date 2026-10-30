@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protocolos IoT e Web — MQTT, CoAP e HTTP</title>
+<style>
+:root{--ink:#16324f;--muted:#52677e;--blue:#1677d2;--pink:#d83e91;--green:#119b78;--gold:#e89b16;--panel:#fff;--line:#dbe7f2}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#edf7ff,#f7f1ff);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}
+main{max-width:1100px;margin:auto;padding:24px 18px 40px}.hero{background:#0b4775;color:white;border-radius:22px;padding:24px 26px;box-shadow:0 10px 25px #143c5c22}
+.hero h1{margin:0 0 8px;font-size:clamp(1.7rem,4vw,2.5rem)}.hero p{margin:0;color:#e1f2ff;line-height:1.5}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 14px}.tab{border:2px solid transparent;border-radius:12px;padding:11px 18px;background:#fff;color:var(--ink);font-weight:800;cursor:pointer;box-shadow:0 3px 10px #203c5810}.tab[aria-selected=true]{background:#163f67;color:#fff}.tab:focus-visible,button:focus-visible{outline:3px solid #f2b544;outline-offset:3px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 8px 25px #173c5b0b}.summary{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px}.summary h2{margin:0 0 8px;font-size:1.25rem}.summary p{margin:0;line-height:1.55;color:var(--muted)}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f4ff;color:#135b91;font-size:.8rem;font-weight:800;margin-bottom:9px}
+.scene{position:relative;overflow:hidden;min-height:310px;background:linear-gradient(180deg,#f8fcff,#edf7ff);border:1px solid #d9eafa;border-radius:18px;padding:24px 18px 18px}
+.scene h2{margin:0;text-align:center;font-size:1.25rem}.scene-sub{text-align:center;color:var(--muted);font-size:.92rem;margin:5px 0 24px}
+.nodes{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:12px;position:relative;z-index:2}
+.node{min-height:115px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px 8px;background:#fff;border:2px solid #cfe2f4;border-radius:16px;box-shadow:0 5px 14px #1b4c7010}
+.node .ico{font-size:2.4rem;line-height:1.2;margin-bottom:8px}.node strong{font-size:1rem}.node small{color:var(--muted);margin-top:4px;line-height:1.3}
+.node.broker{border-color:#c4b5fd;background:#faf7ff}.node.server{border-color:#9ed9c8;background:#f2fffa}
+.flow{position:absolute;top:58%;left:17%;right:17%;height:5px;background:#c8d9e9;border-radius:99px;z-index:1}
+.packet{position:absolute;z-index:3;left:17%;top:calc(58% - 19px);padding:8px 11px;border-radius:10px;background:var(--pink);color:#fff;font-weight:800;font-size:.82rem;box-shadow:0 5px 14px #d83e9133;opacity:0;transform:translateX(0);white-space:nowrap}
+.packet.show{opacity:1;animation:travel 1.3s ease-in-out forwards}
+@keyframes travel{0%{left:17%;opacity:0;transform:scale(.8)}12%{opacity:1;transform:scale(1)}88%{opacity:1}100%{left:78%;opacity:0;transform:scale(.92)}}
+.packet.reverse{background:var(--green);animation:travelBack 1.3s ease-in-out forwards}
+@keyframes travelBack{0%{left:78%;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:17%;opacity:0}}
+.stage{margin-top:14px;padding:15px 17px;border-radius:14px;background:#f5f0ff;border-left:5px solid var(--pink);min-height:75px}
+.stage strong{display:block;margin-bottom:5px}.stage p{margin:0;line-height:1.5;color:#40566d}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}.btn{border:0;border-radius:11px;padding:11px 16px;font-weight:800;cursor:pointer;background:#e8f1fa;color:#173c5d}.btn.primary{background:#1168b2;color:white}.btn:disabled{opacity:.45;cursor:not-allowed}.stepcount{margin-left:auto;color:var(--muted);font-weight:700}
+.example{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.example h3{margin:0 0 9px}.code{font: .88rem/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;background:#102b45;color:#e5f5ff;padding:13px;border-radius:12px;overflow-wrap:anywhere}
+.footer{margin-top:16px;color:var(--muted);font-size:.9rem;line-height:1.5}.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:.85rem}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:var(--pink)}.dot.green{background:var(--green)}
+@media(max-width:700px){main{padding:14px 10px 28px}.summary,.example{grid-template-columns:1fr}.scene{padding:18px 10px;min-height:330px}.nodes{gap:6px}.node{min-height:108px;padding:8px 4px}.node .ico{font-size:1.8rem}.node strong{font-size:.85rem}.node small{font-size:.72rem}.flow{left:15%;right:15%;top:59%}.packet{font-size:.7rem;padding:6px 7px;top:calc(59% - 18px)}.stepcount{margin-left:0;width:100%}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main>
+  <section class="card" aria-label="Identificação acadêmica" style="margin-bottom:18px;border-left:6px solid #1677d2;background:#fff">
+    <span class="pill">Apresentação acadêmica · 2026.2</span>
+    <h2 style="margin:2px 0 16px">Internet das Coisas (IoT) — Fundamentos e Protocolos de Comunicação</h2>
+    <p style="line-height:1.65;margin:7px 0"><strong>Disciplina:</strong> 1107032 - REDES DE COMPUTADORES - T01 (2026.2 - 6M2345)</p>
+    <p style="line-height:1.65;margin:7px 0"><strong>Professor:</strong> Dr. FERNANDO MENEZES MATOS</p>
+    <p style="line-height:1.65;margin:7px 0"><strong>Equipe:</strong> ANA PAULA DE SOUZA DO Ó LOPES e FRANCISCO CARLOS DE LIMA PEREIRA</p>
+  </section>
+  <header class="hero">
+    <h1>Como os protocolos se comunicam?</h1>
+    <p>Conheça os fundamentos de IoT e explore MQTT, CoAP e HTTP em uma simulação visual. Selecione um protocolo e avance etapa por etapa para acompanhar o caminho das mensagens.</p>
+  </header>
+
+
+<style>
+.theory{margin:18px 0}.theory h2{margin:0 0 12px}.theory h3{margin:16px 0 7px}.theory p,.theory li{line-height:1.65;color:#40566d}.theory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.theory-grid article{background:#f4f9ff;border:1px solid #dbe7f2;border-radius:13px;padding:14px}.theory-grid h3{margin:0 0 6px}.theory table{width:100%;border-collapse:collapse;font-size:.92rem}.theory th,.theory td{border:1px solid #dbe7f2;padding:10px;text-align:left;vertical-align:top}.theory th{background:#e8f4ff}.table-scroll{overflow-x:auto}.pipeline{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:15px 0}.pipeline span{padding:11px;background:#e8f4ff;border-radius:10px;font-weight:700}.theory details{margin-top:12px;border-top:1px solid #dbe7f2;padding-top:12px}.theory summary{cursor:pointer;font-weight:700}
+</style>
+<section class="card theory" id="fundamentos">
+<span class="pill">Fundamentação teórica · Redes de Computadores</span>
+<h2>O que é Internet das Coisas (IoT)?</h2>
+<p>A <strong>Internet das Coisas (Internet of Things — IoT)</strong> é uma infraestrutura de objetos físicos ou virtuais identificáveis, equipados com recursos para captar informações, comunicar dados e, em muitos casos, atuar sobre o ambiente. Esses objetos podem ser sensores, máquinas industriais, veículos, eletrodomésticos e dispositivos vestíveis. A IoT integra o mundo físico a sistemas computacionais e serviços de rede.</p>
+<p><strong>Objetivo:</strong> permitir monitoramento, automação e decisões orientadas por dados, com diferentes graus de autonomia. Nem todo dispositivo IoT precisa se conectar diretamente à Internet: ele pode se comunicar com um gateway ou rede local.</p>
+<h3>Conceitos fundamentais</h3>
+<div class="theory-grid">
+<article><h3>🌡️ Sensores</h3><p>Medem grandezas físicas, como temperatura, umidade, luminosidade ou movimento, e convertem essas medições em sinais ou dados digitais.</p></article>
+<article><h3>⚙️ Atuadores</h3><p>Executam ações físicas comandadas pelo sistema, como acionar um relé, abrir uma válvula ou ligar um ventilador.</p></article>
+<article><h3>📟 Microcontroladores</h3><p>Dispositivos como ESP32 e Arduino processam leituras, executam regras locais e controlam periféricos. A conectividade varia conforme o modelo.</p></article>
+<article><h3>📡 Conectividade</h3><p>Wi-Fi, Ethernet, Bluetooth LE, Zigbee, LoRaWAN e redes celulares oferecem diferentes alcances, taxas de dados e consumo energético.</p></article>
+<article><h3>🌐 Gateway</h3><p>Interliga dispositivos e redes distintas, podendo converter protocolos, agregar dados, aplicar filtros e encaminhar mensagens.</p></article>
+<article><h3>☁️ Edge e nuvem</h3><p>O processamento na borda reduz latência e tráfego; a nuvem pode armazenar históricos, executar análises e disponibilizar painéis.</p></article>
+</div>
+<h3>Arquitetura conceitual em quatro camadas</h3>
+<div class="theory-grid">
+<article><h3>1. Percepção</h3><p>Sensores e atuadores interagem com o ambiente físico.</p></article>
+<article><h3>2. Rede</h3><p>Meios de comunicação, endereçamento, roteamento e transporte dos dados.</p></article>
+<article><h3>3. Processamento</h3><p>Gateway, edge ou nuvem validam, armazenam e analisam os dados.</p></article>
+<article><h3>4. Aplicação</h3><p>Dashboards, alertas e regras de automação atendem às necessidades do usuário.</p></article>
+</div>
+<p><em>Nota:</em> este é um modelo didático; outras referências adotam arquiteturas de três, cinco ou mais camadas.</p>
+<h3>Como a IoT funciona na prática?</h3>
+<div class="pipeline"><span>1. Medição 🌡️</span> → <span>2. Processamento local 📟</span> → <span>3. Rede 📡</span> → <span>4. Plataforma ☁️</span> → <span>5. Alerta ou ação ⚙️</span></div>
+<p>Exemplo: um sensor mede <strong>25 °C</strong>; o ESP32 lê o valor e o publica via Wi-Fi em um broker MQTT; uma aplicação assinante recebe a atualização, apresenta o dado no painel e pode enviar um comando para ligar um ventilador quando um limite configurado for ultrapassado. Para que a ação ocorra, são necessários um atuador e uma lógica de controle.</p>
+</section>
+
+<section class="card theory" id="vestiveis">
+<span class="pill">IoT atual · Wearables e Internet dos Corpos</span>
+<h2>⌚ Dispositivos vestíveis (wearables) na IoT</h2>
+<p>Os <strong>wearables</strong> são dispositivos eletrônicos usados junto ao corpo, capazes de captar sinais, processar informações e comunicar dados a aplicativos ou plataformas. Integram o ecossistema da <strong>Internet das Coisas</strong> e, em aplicações corporais, são frequentemente associados à <em>Internet of Bodies (IoB)</em>. Nem todos os vestíveis precisam estar continuamente conectados à Internet: muitos sincronizam dados por meio de um smartphone.</p>
+<div class="theory-grid">
+<article><h3>⌚ Relógios e pulseiras inteligentes</h3><p>Monitoram atividade física, passos, frequência cardíaca, sono e, conforme o modelo, estimativas de oxigenação ou ECG. Podem exibir notificações e alertas.</p></article>
+<article><h3>💍 Anéis inteligentes</h3><p>Utilizam sensores miniaturizados para acompanhar tendências de sono, temperatura da pele, movimento e frequência cardíaca, com foco em autonomia e conforto.</p></article>
+<article><h3>👓 Óculos inteligentes</h3><p>Podem combinar câmera, microfones, áudio, interfaces de realidade aumentada e recursos de IA; dependem de permissões e cuidados com a privacidade de terceiros.</p></article>
+<article><h3>🩹 Adesivos e sensores corporais</h3><p>Dispositivos aderidos à pele podem registrar parâmetros fisiológicos ou monitorar continuamente grandezas específicas. Alguns são dispositivos médicos regulados.</p></article>
+<article><h3>👕 Roupas e calçados conectados</h3><p>Sensores têxteis e de movimento ajudam a estudar postura, marcha, desempenho esportivo e segurança ocupacional.</p></article>
+<article><h3>🎧 Fones e dispositivos auditivos</h3><p>Integram sensores, processamento local, comandos de voz e conectividade; determinados modelos incorporam recursos de acessibilidade e monitoramento.</p></article>
+</div>
+<h3>Características tecnológicas atuais</h3>
+<ul>
+<li><strong>Miniaturização e baixo consumo:</strong> chips compactos, Bluetooth Low Energy (BLE), gerenciamento de bateria e modos de suspensão.</li>
+<li><strong>Sensoriamento multimodal:</strong> acelerômetro, giroscópio, fotopletismografia (PPG), temperatura, localização e outros sensores, conforme o produto.</li>
+<li><strong>IA no dispositivo (TinyML / Edge AI):</strong> classificação de atividades, detecção de padrões e geração de alertas sem enviar todos os dados brutos à nuvem.</li>
+<li><strong>Conectividade híbrida:</strong> BLE com smartphone, Wi-Fi e, em modelos compatíveis, conexão celular própria; a disponibilidade depende do equipamento.</li>
+<li><strong>Integração com plataformas:</strong> sincronização de histórico, APIs, painéis e interoperabilidade com serviços de saúde e bem-estar.</li>
+<li><strong>Segurança e privacidade:</strong> criptografia, consentimento, controle de acesso, atualizações de firmware e tratamento adequado de dados pessoais sensíveis.</li>
+<li><strong>Limitações:</strong> autonomia, conforto, precisão variável, artefatos de movimento, conectividade intermitente e diferenças entre sensores de consumo e dispositivos clínicos.</li>
+</ul>
+<h3>Como funciona um wearable conectado?</h3>
+<div class="pipeline"><span>❤️ Sensor corporal</span> → <span>⌚ Processamento no vestível</span> → <span>📶 BLE / Wi-Fi / celular</span> → <span>📱 Smartphone / gateway</span> → <span>☁️ Plataforma</span> → <span>🔔 Painel ou alerta</span></div>
+<p><strong>Exemplo didático:</strong> um relógio estima a frequência cardíaca por PPG, filtra o sinal e mostra o resultado. Quando sincronizado, o aplicativo pode armazenar a série histórica e produzir notificações. <strong>Uma leitura isolada não equivale a diagnóstico médico</strong>; precisão e finalidade dependem da validação e da classificação do dispositivo.</p>
+<h3>Onde entram MQTT, CoAP e HTTP?</h3>
+<div class="table-scroll"><table><thead><tr><th>Tecnologia</th><th>Papel possível no cenário vestível</th></tr></thead><tbody>
+<tr><td>Bluetooth LE</td><td>Ligação local de baixo consumo entre relógio e smartphone; não é protocolo de aplicação MQTT/CoAP/HTTP.</td></tr>
+<tr><td>MQTT</td><td>Publicação de eventos ou telemetria pelo gateway para serviços assinantes, quando a arquitetura o utiliza.</td></tr>
+<tr><td>CoAP</td><td>Consulta ou controle compacto de recursos em dispositivos restritos, em arquiteturas compatíveis.</td></tr>
+<tr><td>HTTP/HTTPS</td><td>Sincronização com APIs, contas, painéis e plataformas em nuvem, normalmente a partir do aplicativo.</td></tr>
+</tbody></table></div>
+<h3>Demonstração: telemetria de um relógio inteligente</h3>
+<p>Pressione o botão para gerar uma <strong>leitura fictícia</strong> e acompanhar um exemplo de mensagem que um gateway poderia publicar em MQTT. Esta demonstração não acessa sensores reais nem fornece orientação clínica.</p>
+<div class="theory-grid"><article><h3>⌚ Leitura simulada</h3><p id="wear-reading" aria-live="polite">Aguardando simulação.</p><button class="btn primary" id="wear-demo" type="button">▶ Simular nova leitura</button></article><article><h3>📨 Exemplo de publicação MQTT</h3><div class="code" id="wear-payload">Tópico: wearable/demo/telemetria
+Aguardando leitura...</div></article></div>
+<p><strong>Referências complementares:</strong> IEEE 11073 (interoperabilidade de dispositivos de saúde); Bluetooth SIG (Bluetooth Low Energy); NIST IR 8259 (segurança de dispositivos IoT); Lei nº 13.709/2018 (LGPD, Brasil). A disponibilidade e as funções dos sensores variam por fabricante e modelo.</p>
+</section>
+
+<section class="card theory" id="protocolos-teoria">
+<h2>Fundamentos dos protocolos de aplicação</h2>
+<p>Um <strong>protocolo</strong> define regras de formatação, envio e interpretação de mensagens entre sistemas. MQTT, CoAP e HTTP operam na camada de aplicação, mas empregam modelos de comunicação diferentes. Eles não substituem tecnologias de acesso como Wi-Fi nem protocolos de rede como IP.</p>
+<div class="theory-grid">
+<article><h3>MQTT — Publish/Subscribe</h3><p>Clientes publicam mensagens em <strong>tópicos</strong> e outros clientes assinam esses tópicos. O <strong>broker</strong> distribui as mensagens. Oferece níveis de QoS 0, 1 e 2, que definem garantias de entrega no protocolo, com diferentes custos.</p><p><strong>Exemplo:</strong> publicar 25 °C em <code>casa/sala/temperatura</code>.</p></article>
+<article><h3>CoAP — Recursos REST</h3><p>Protocolo compacto voltado a dispositivos e redes restritos. Um cliente solicita um recurso por URI com métodos como GET, POST, PUT e DELETE. Geralmente usa UDP e dispõe de mecanismos próprios de confirmação e retransmissão.</p><p><strong>Exemplo:</strong> <code>GET coap://192.168.1.100/sala/temperatura</code>.</p></article>
+<article><h3>HTTP — Cliente/Servidor</h3><p>Base das APIs e aplicações Web. O cliente envia uma requisição e recebe uma resposta com código de status, cabeçalhos e corpo. HTTP/1.1 e HTTP/2 usam TCP; HTTP/3 usa QUIC sobre UDP.</p><p><strong>Exemplo:</strong> <code>GET /index.html</code> com resposta <code>200 OK</code>.</p></article>
+</div>
+<h3>Comparação entre MQTT, CoAP e HTTP</h3>
+<div class="table-scroll"><table><thead><tr><th>Critério</th><th>MQTT</th><th>CoAP</th><th>HTTP</th></tr></thead><tbody>
+<tr><td>Modelo</td><td>Publicação/assinatura</td><td>Requisição/resposta; Observe opcional</td><td>Requisição/resposta</td></tr>
+<tr><td>Intermediário</td><td>Broker</td><td>Servidor; proxies opcionais</td><td>Servidor; proxies opcionais</td></tr>
+<tr><td>Transporte típico</td><td>TCP</td><td>UDP</td><td>TCP (HTTP/1.1 e 2); QUIC (HTTP/3)</td></tr>
+<tr><td>Portas usuais</td><td>1883; 8883 com TLS</td><td>5683; 5684 com DTLS</td><td>80; 443 com HTTPS</td></tr>
+<tr><td>Uso frequente</td><td>Telemetria e eventos</td><td>Dispositivos restritos</td><td>APIs e integração Web</td></tr>
+<tr><td>Segurança</td><td>TLS, autenticação e autorização</td><td>DTLS ou OSCORE, conforme implantação</td><td>TLS no HTTPS</td></tr>
+</tbody></table></div>
+<p><strong>Como escolher?</strong> MQTT é conveniente para eventos enviados a vários consumidores; CoAP favorece operações compactas sobre recursos; HTTP simplifica a integração com aplicações e serviços Web. A decisão depende de latência, conectividade, consumo energético, interoperabilidade e segurança — não apenas do tamanho das mensagens.</p>
+<h3>Segurança e desafios</h3>
+<p>Dispositivos IoT exigem <strong>identidade e autenticação</strong>, autorização por dispositivo/tópico/recurso, proteção de dados em trânsito, atualização segura de firmware, gerenciamento de credenciais e minimização de dados pessoais. Outros desafios incluem interoperabilidade entre fabricantes, energia limitada, cobertura de rede, escalabilidade e manutenção de equipamentos em campo.</p>
+<details><summary>Referências técnicas para estudo</summary><ul>
+<li>ITU-T Y.2060 (2012). <em>Overview of the Internet of Things</em>.</li>
+<li>OASIS. <em>MQTT Version 5.0</em> (2019).</li>
+<li>IETF RFC 7252. <em>The Constrained Application Protocol (CoAP)</em> (2014).</li>
+<li>IETF RFC 9110. <em>HTTP Semantics</em> (2022).</li>
+<li>NIST IR 8259. <em>Foundational Cybersecurity Activities for IoT Device Manufacturers</em> (2020).</li>
+</ul></details>
+</section>
+
+
+<section class="card theory" id="mqtt-aprofundamento">
+<span class="pill">Aprofundamento técnico · Baseado no e-book MQTT Essentials (HiveMQ, versão 2.0)</span>
+<h2>MQTT em profundidade: conceitos, confiabilidade e funcionamento</h2>
+<p>O <strong>MQTT</strong> é um protocolo leve de mensagens, padronizado pela OASIS, adequado à telemetria e a dispositivos com restrições de banda e processamento. Foi criado em 1999 por Andy Stanford-Clark e Arlen Nipper para comunicação eficiente em enlaces remotos. O MQTT 3.1.1 e o MQTT 5 preservam o modelo de <strong>publicação e assinatura</strong> (Publish/Subscribe).</p>
+<h3>1. Quem participa da comunicação?</h3>
+<div class="theory-grid">
+<article><h3>📤 Publicador (publisher)</h3><p>Cliente que envia uma mensagem a um tópico, por exemplo <code>casa/sala/temperatura</code>. Pode ser um ESP32, Raspberry Pi ou gateway de dispositivo vestível.</p></article>
+<article><h3>🔀 Broker</h3><p>Servidor intermediário que recebe publicações, gerencia assinaturas e encaminha mensagens aos clientes autorizados. Não é apenas um banco de dados.</p></article>
+<article><h3>📥 Assinante (subscriber)</h3><p>Cliente que se inscreve em tópicos de interesse e recebe as publicações correspondentes. Um mesmo cliente pode publicar e assinar.</p></article>
+</div>
+<div class="pipeline"><span>Sensor / gateway</span> → <span>PUBLISH</span> → <span>Broker MQTT</span> → <span>SUBSCRIBER</span> → <span>Painel / aplicativo</span></div>
+<p><strong>Desacoplamento:</strong> publicador e assinante não precisam conhecer os endereços um do outro. O broker permite separar produtores e consumidores; a entrega durante períodos de desconexão depende de sessão, QoS e configuração, não é automática em todos os casos.</p>
+<h3>2. Como uma conexão MQTT é estabelecida?</h3>
+<ol><li>O cliente abre a conexão com o broker, normalmente sobre <strong>TCP</strong> (porta 1883) ou TCP com <strong>TLS</strong> (porta 8883).</li><li>Envia <code>CONNECT</code> com identificador e parâmetros de sessão; o broker responde <code>CONNACK</code>.</li><li>Um assinante envia <code>SUBSCRIBE</code>; o broker responde <code>SUBACK</code>.</li><li>O publicador envia <code>PUBLISH</code> com tópico, conteúdo (payload), QoS e opção de retenção.</li><li>O broker encaminha a mensagem aos assinantes correspondentes. <code>PINGREQ</code>/<code>PINGRESP</code> podem manter a conexão monitorada.</li></ol>
+<h3>3. Tópicos hierárquicos e curingas</h3>
+<p>Os níveis de um tópico são separados por barras (<code>/</code>). O curinga <code>+</code> representa <strong>um nível</strong>; <code>#</code> representa <strong>zero ou mais níveis</strong> e só pode aparecer no fim do filtro. Curingas são usados em filtros de assinatura, não no nome de tópico publicado.</p>
+<div class="theory-grid"><article><label for="mqtt-filter"><strong>Filtro de assinatura</strong></label><input id="mqtt-filter" value="casa/+/temperatura" aria-label="Filtro MQTT" style="width:100%;padding:11px;border:1px solid #bed2e4;border-radius:9px;margin-top:8px" /></article><article><label for="mqtt-topic"><strong>Tópico publicado</strong></label><input id="mqtt-topic" value="casa/sala/temperatura" aria-label="Tópico MQTT" style="width:100%;padding:11px;border:1px solid #bed2e4;border-radius:9px;margin-top:8px" /></article></div>
+<p id="mqtt-match-result" aria-live="polite"><strong>Resultado:</strong> o filtro corresponde ao tópico.</p>
+<h3>4. Qualidade de Serviço (QoS): escolha interativa</h3>
+<p>O QoS define a garantia de entrega <strong>em cada trecho da comunicação MQTT</strong>. Não garante que a aplicação processou corretamente o dado, nem que toda mensagem será armazenada indefinidamente.</p>
+<div class="controls" role="group" aria-label="Selecionar nível de QoS"><button class="btn primary mqtt-qos" data-qos="0" type="button">QoS 0</button><button class="btn mqtt-qos" data-qos="1" type="button">QoS 1</button><button class="btn mqtt-qos" data-qos="2" type="button">QoS 2</button></div>
+<div class="stage" id="mqtt-qos-description" aria-live="polite"><strong>QoS 0 — No máximo uma vez</strong><p>Envio sem confirmação MQTT: menor sobrecarga, mas a mensagem pode ser perdida. Exemplo: leituras frequentes de temperatura.</p></div>
+<div class="table-scroll"><table><thead><tr><th>Nível</th><th>Garantia</th><th>Troca de controle</th><th>Trade-off</th></tr></thead><tbody><tr><td>0</td><td>No máximo uma vez</td><td>PUBLISH</td><td>Baixa sobrecarga; pode perder mensagens</td></tr><tr><td>1</td><td>Pelo menos uma vez</td><td>PUBLISH → PUBACK</td><td>Maior confiabilidade; pode duplicar</td></tr><tr><td>2</td><td>Exatamente uma vez no fluxo MQTT</td><td>PUBLISH → PUBREC → PUBREL → PUBCOMP</td><td>Mais controle e tráfego</td></tr></tbody></table></div>
+<h3>5. Mensagem retida, sessão persistente e último aviso</h3>
+<div class="theory-grid"><article><h3>📌 Retained message</h3><p>O broker mantém a última publicação marcada como retida para um tópico e pode enviá-la imediatamente a novos assinantes correspondentes. Não equivale a guardar todo o histórico.</p></article><article><h3>🔄 Sessão persistente</h3><p>Permite conservar estado de assinatura e determinadas mensagens pendentes durante desconexões, conforme QoS, configuração e prazo de expiração da sessão.</p></article><article><h3>🚨 Last Will and Testament (LWT)</h3><p>O cliente registra uma mensagem de última vontade; se ocorrer uma desconexão inesperada, o broker pode publicá-la, por exemplo <code>dispositivo/offline</code>.</p></article><article><h3>💓 Keep Alive</h3><p>Intervalo de monitoramento da conexão; quando não há outros pacotes, o cliente pode enviar <code>PINGREQ</code>. Ajuda a identificar clientes indisponíveis.</p></article></div>
+<h3>6. O que muda no MQTT 5?</h3>
+<p>O MQTT 5 acrescenta mecanismos úteis para IoT em escala: <strong>códigos de motivo e feedback de erros</strong>, <strong>expiração de sessão e mensagem</strong>, <strong>propriedades de usuário</strong>, <strong>alias de tópico</strong>, <strong>assinaturas compartilhadas</strong>, <strong>controle de fluxo</strong> e recursos de <strong>autenticação aprimorada</strong>. Esses recursos dependem de suporte do cliente e do broker.</p>
+<h3>7. Exemplo aplicado: monitoramento de um dispositivo vestível</h3>
+<p>Um relógio pode enviar medições por Bluetooth Low Energy ao smartphone. O aplicativo atua como <strong>gateway MQTT</strong>, publica telemetria com autorização e TLS, e um painel assina o tópico. <strong>O relógio não precisa implementar MQTT diretamente.</strong> Dados biométricos são sensíveis e exigem proteção adicional.</p>
+<div class="code">Tópico: vestiveis/relogio01/telemetria
+QoS: 1
+Retain: false
+Payload (JSON):
+{ "frequencia_cardiaca_bpm": 78, "passos": 3200, "simulado": true }</div>
+<h3>8. Exemplo de teste em laboratório com Mosquitto</h3>
+<p>Em um broker local de laboratório, um terminal assina e outro publica. Para produção, use autenticação, ACLs e TLS; não exponha um broker sem proteção à Internet.</p>
+<div class="code"># Terminal A: assinar um tópico no broker local
+mosquitto_sub -h localhost -t 'laboratorio/temperatura' -q 1 -v
+
+# Terminal B: publicar uma leitura de exemplo
+mosquitto_pub -h localhost -t 'laboratorio/temperatura' -m '25 C' -q 1</div>
+<details><summary>Fonte e capítulos utilizados (leitura complementar)</summary><p><em>HiveMQ. MQTT Essentials: The Ultimate Guide to the MQTT Protocol for IoT Messaging.</em> Versão 2.0, PDF fornecido para esta atividade. Introdução e histórico (cap. 1); fundamentos e clientes/brokers (cap. 2); tópicos, assinaturas e persistência (caps. 3–4); conexão e comandos (caps. 5–7); QoS (cap. 8); sessões, retained, LWT e Keep Alive (caps. 9–12); novidades MQTT 5 (caps. 13–24). Os exemplos didáticos e a interface desta página são adaptações originais em português, não tradução integral do e-book.</p></details>
+</section>
+
+  <nav class="tabs" role="tablist" aria-label="Selecionar protocolo">
+    <button class="tab" role="tab" aria-selected="true" data-protocol="mqtt">MQTT · Publicação/assinatura</button>
+    <button class="tab" role="tab" aria-selected="false" data-protocol="coap">CoAP · Requisição/resposta</button>
+    <button class="tab" role="tab" aria-selected="false" data-protocol="http">HTTP · Cliente/servidor</button>
+  </nav>
+
+  <section class="summary">
+    <article class="card"><span class="pill" id="pill">IoT · mensagens por tópico</span><h2 id="title">MQTT: o broker distribui as mensagens</h2><p id="description">Um sensor publica a temperatura em um tópico. O broker MQTT recebe a mensagem e a encaminha aos clientes que assinaram esse tópico.</p></article>
+    <article class="card"><h2>O que observar</h2><p id="observe">O sensor não precisa conhecer cada destinatário. O broker faz a distribuição para os assinantes do tópico.</p></article>
+  </section>
+
+  <section class="scene" aria-label="Animação do fluxo de comunicação">
+    <h2 id="sceneTitle">Publicação e assinatura (Publish/Subscribe)</h2>
+    <p class="scene-sub" id="sceneSub">Exemplo: sensor publica 25 °C no tópico casa/sala/temperatura</p>
+    <div class="flow" aria-hidden="true"></div>
+    <div class="packet" id="packet" aria-hidden="true">25 °C</div>
+    <div class="nodes">
+      <div class="node" id="leftNode"><div class="ico" id="leftIcon">🌡️</div><strong id="leftName">Sensor IoT</strong><small id="leftDesc">Publica a temperatura</small></div>
+      <div class="node broker" id="middleNode"><div class="ico" id="middleIcon">☁️</div><strong id="middleName">Broker MQTT</strong><small id="middleDesc">Recebe e distribui</small></div>
+      <div class="node server" id="rightNode"><div class="ico" id="rightIcon">📱</div><strong id="rightName">Aplicativo inscrito</strong><small id="rightDesc">Assinante do tópico</small></div>
+    </div>
+  </section>
+
+  <div class="stage" aria-live="polite"><strong id="stageTitle">Etapa 1 — O cliente publica</strong><p id="stageText">O sensor envia a leitura de 25 °C ao tópico casa/sala/temperatura.</p></div>
+  <div class="controls">
+    <button class="btn primary" id="playBtn">▶ Reproduzir</button>
+    <button class="btn" id="nextBtn">Próxima etapa →</button>
+    <button class="btn" id="resetBtn">↺ Reiniciar</button>
+    <span class="stepcount" id="stepcount">Etapa 1 de 3</span>
+  </div>
+
+  <section class="example">
+    <article class="card"><h3>Exemplo de mensagem</h3><div class="code" id="code">Tópico: casa/sala/temperatura
+Payload: 25 °C
+Ação: publicar (PUBLISH)</div></article>
+    <article class="card"><h3>Aplicações comuns</h3><p id="apps">Sensores ambientais, automação residencial, telemetria e dispositivos conectados que enviam atualizações para vários consumidores.</p><div class="legend"><span><i class="dot"></i>Mensagem enviada</span><span><i class="dot green"></i>Resposta ou entrega</span></div></article>
+  </section>
+  <p class="footer"><strong>Nota didática:</strong> a animação representa o conceito, não uma conexão real de rede. HTTP normalmente usa TCP (ou HTTP/3 sobre QUIC); MQTT costuma usar TCP; CoAP normalmente usa UDP, embora existam extensões e outros transportes.</p>
+
+<section id="laboratorio-iot" class="card" style="margin:24px 0;padding:24px">
+<h2>Laboratório virtual de protocolos IoT</h2>
+<p>Simulação didática local: os resultados são estimativas geradas por um modelo simplificado, não medições de uma rede real. Compare MQTT, CoAP e HTTP sob as mesmas condições.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0">
+<label>Protocolo<select id="labProto" style="display:block;width:100%;padding:10px"><option>MQTT</option><option>CoAP</option><option>HTTP</option></select></label>
+<label>Mensagens enviadas<input id="labN" type="number" min="1" max="500" value="30" style="display:block;width:100%;padding:10px"></label>
+<label>Perda simulada (%)<input id="labLoss" type="range" min="0" max="50" value="10" style="display:block;width:100%"><span id="labLossVal">10%</span></label>
+<label>Latência de ida e volta (ms)<input id="labRtt" type="number" min="1" max="2000" value="100" style="display:block;width:100%;padding:10px"></label>
+<label>QoS MQTT<select id="labQos" style="display:block;width:100%;padding:10px"><option value="0">QoS 0</option><option value="1">QoS 1</option><option value="2">QoS 2</option></select></label>
+<label>Tamanho do dado (bytes)<input id="labBytes" type="number" min="1" max="100000" value="64" style="display:block;width:100%;padding:10px"></label>
+</div>
+<div class="controls"><button class="btn primary" id="labRun" type="button">▶ Executar experimento</button><button class="btn" id="labCompare" type="button">Comparar os 3 protocolos</button><button class="btn" id="labCsv" type="button">Exportar CSV</button></div>
+<div id="labResults" aria-live="polite" style="margin-top:18px"></div>
+<div style="margin-top:20px"><h3>Registro dos pacotes simulados</h3><div id="labLog" style="max-height:250px;overflow:auto;background:#102b45;color:#e5f5ff;padding:14px;border-radius:12px;font:13px/1.6 monospace;white-space:pre-wrap">Execute um experimento para visualizar o tráfego.</div></div>
+<p style="font-size:.9rem;color:#52677e;margin-top:15px">Modelo: cada tentativa tem probabilidade independente de perda. MQTT QoS 1 e 2 usam novas tentativas até um limite didático de três; CoAP usa confirmação apenas na modalidade CON simplificada; HTTP considera uma requisição por mensagem, sem repetição automática. Não são implementações das pilhas reais. A sobrecarga exibida é uma aproximação fixa por tentativa e não representa todos os cabeçalhos ou handshakes.</p>
+</section>
+<script>
+(function(){
+const $=id=>document.getElementById(id);let records=[];
+$('labLoss').oninput=()=>{$('labLossVal').textContent=$('labLoss').value+'%'};
+$('labProto').onchange=()=>{$('labQos').disabled=$('labProto').value!=='MQTT'};
+function simulate(proto){const n=Math.min(500,Math.max(1,+$('labN').value||30)), loss=Math.max(0,Math.min(.5,(+$('labLoss').value)/100)),rtt=Math.max(1,+$('labRtt').value||100),size=Math.max(1,+$('labBytes').value||64),q=+$('labQos').value;let delivered=0,attempts=0,bytes=0,latencies=[],log=[];
+for(let i=1;i<=n;i++){let max=(proto==='MQTT'&&q>0)||proto==='CoAP'?3:1,success=false,tries=0;while(tries<max&&!success){tries++;attempts++;let overhead=proto==='MQTT'?8:proto==='CoAP'?12:220;bytes+=size+overhead;success=Math.random()>=loss; if(log.length<80)log.push('['+proto+'] mensagem '+i+' tentativa '+tries+' → '+(success?'entregue':'perdida'));}if(success){delivered++;latencies.push(rtt*(proto==='HTTP'?1.2:proto==='CoAP'?.85:.7)*tries+(proto==='MQTT'&&q===2?rtt*1.5:0));}}
+return {protocolo:proto,enviadas:n,recebidas:delivered,perdidas:n-delivered,tentativas:attempts,bytes,latencia:latencies.length?Math.round(latencies.reduce((a,b)=>a+b,0)/latencies.length):null,log};}
+function render(results){records=results.map(({log,...r})=>r);let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Protocolo</th><th>Recebidas</th><th>Perdidas</th><th>Tentativas</th><th>Bytes estimados</th><th>Latência média estimada</th></tr></thead><tbody>';results.forEach(r=>{html+='<tr>'+[r.protocolo,r.recebidas,r.perdidas,r.tentativas,r.bytes,r.latencia===null?'—':r.latencia+' ms'].map(v=>'<td style="padding:9px;border-bottom:1px solid #ddd">'+v+'</td>').join('')+'</tr>'});$('labResults').innerHTML=html+'</tbody></table></div>';$('labLog').textContent=results.flatMap(r=>r.log).slice(0,120).join('\n')||'Sem mensagens';}
+$('labRun').onclick=()=>render([simulate($('labProto').value)]);
+$('labCompare').onclick=()=>render(['MQTT','CoAP','HTTP'].map(simulate));
+$('labCsv').onclick=()=>{if(!records.length){$('labResults').textContent='Execute primeiro uma simulação.';return;}let keys=Object.keys(records[0]);let csv=[keys.join(';'),...records.map(r=>keys.map(k=>r[k]??'').join(';'))].join('\r\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='resultados_laboratorio_iot.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+})();
+</script>
+</main>
+<script>
+const protocols={
+mqtt:{
+pill:"IoT · mensagens por tópico",title:"MQTT: o broker distribui as mensagens",
+description:"Um sensor publica a temperatura em um tópico. O broker MQTT recebe a mensagem e a encaminha aos clientes que assinaram esse tópico.",
+observe:"O sensor não precisa conhecer cada destinatário. O broker faz a distribuição para os assinantes do tópico.",
+sceneTitle:"Publicação e assinatura (Publish/Subscribe)",sceneSub:"Exemplo: sensor publica 25 °C no tópico casa/sala/temperatura",
+nodes:[["🌡️","Sensor IoT","Publica a temperatura"],["☁️","Broker MQTT","Recebe e distribui"],["📱","Aplicativo inscrito","Assinante do tópico"]],
+steps:[
+["O sensor publica","O sensor envia a leitura de 25 °C ao tópico casa/sala/temperatura.","25 °C","forward"],
+["O broker recebe","O broker recebe a mensagem PUBLISH e verifica quais clientes estão inscritos no tópico.","PUBLISH","forward"],
+["Os assinantes recebem","O broker entrega a atualização aos assinantes, por exemplo, um aplicativo e um painel web.","25 °C","forward"]
+],
+code:"Tópico: casa/sala/temperatura\nPayload: 25 °C\nAção: publicar (PUBLISH)\nAssinantes: app móvel, painel web",
+apps:"Sensores ambientais, automação residencial, telemetria e dispositivos conectados que enviam atualizações para vários consumidores."
+},
+coap:{
+pill:"IoT · protocolo leve de requisição/resposta",title:"CoAP: cliente consulta um recurso",
+description:"Um dispositivo com recursos limitados envia uma requisição compacta a um servidor CoAP. O servidor processa o pedido e retorna uma resposta.",
+observe:"O cliente indica o recurso por uma URI e usa métodos como GET, POST, PUT ou DELETE. O CoAP normalmente funciona sobre UDP.",
+sceneTitle:"Requisição e resposta",sceneSub:"Exemplo: um ESP32 consulta a temperatura de um servidor CoAP",
+nodes:[["📟","Cliente CoAP","ESP32 solicita dado"],["📡","Rede / UDP","Transporta a requisição"],["🖥️","Servidor CoAP","Responde com o recurso"]],
+steps:[
+["O cliente faz a requisição","O ESP32 solicita o recurso /sala/temperatura usando o método GET.","GET /sala/temperatura","forward"],
+["O servidor processa","O servidor consulta o recurso solicitado e prepara a resposta compacta.","Processando…","forward"],
+["O cliente recebe a resposta","O servidor retorna, por exemplo, o código 2.05 Content e o valor 25 °C.","2.05 · 25 °C","reverse"]
+],
+code:"Método: GET\nURI: coap://192.168.1.100/sala/temperatura\nResposta: 2.05 Content\nPayload: {\"temperatura\": 25}",
+apps:"Sensores de baixo consumo, redes de automação, microcontroladores e dispositivos que precisam trocar dados com pouca sobrecarga."
+},
+http:{
+pill:"Web · cliente e servidor",title:"HTTP: o cliente pede e o servidor responde",
+description:"O navegador ou aplicativo envia uma requisição HTTP para um servidor. O servidor processa o pedido e devolve uma resposta com status, cabeçalhos e conteúdo.",
+observe:"A comunicação segue o modelo requisição/resposta. GET consulta dados; POST envia dados; PUT atualiza; DELETE remove um recurso.",
+sceneTitle:"Requisição e resposta cliente/servidor",sceneSub:"Exemplo: navegador solicita uma página web ao servidor",
+nodes:[["💻","Cliente / navegador","Solicita uma página"],["🌐","Internet","Encaminha os dados"],["🗄️","Servidor web","Retorna HTML ou JSON"]],
+steps:[
+["O cliente envia a requisição","O navegador solicita /index.html usando GET e informa o host de destino.","GET /index.html","forward"],
+["O servidor processa","O servidor localiza o recurso ou executa a lógica da aplicação.","Processando…","forward"],
+["O servidor responde","O servidor devolve um status, como 200 OK, e o conteúdo HTML que o navegador apresenta.","200 OK · HTML","reverse"]
+],
+code:"GET /index.html HTTP/1.1\nHost: www.exemplo.com\n\nResposta: HTTP/1.1 200 OK\nContent-Type: text/html",
+apps:"Sites, APIs REST, comércio eletrônico, aplicações móveis, serviços em nuvem e integração entre sistemas pela Internet."
+}
+};
+let current="mqtt",step=0,timer=null;
+const $=id=>document.getElementById(id);
+function stop(){if(timer){clearInterval(timer);timer=null;}$("playBtn").textContent="▶ Reproduzir";}
+function render(){
+ const p=protocols[current];$("pill").textContent=p.pill;$("title").textContent=p.title;$("description").textContent=p.description;$("observe").textContent=p.observe;
+ $("sceneTitle").textContent=p.sceneTitle;$("sceneSub").textContent=p.sceneSub;
+ ["left","middle","right"].forEach((side,i)=>{const n=p.nodes[i];$(side+"Icon").textContent=n[0];$(side+"Name").textContent=n[1];$(side+"Desc").textContent=n[2];});
+ $("code").textContent=p.code;$("apps").textContent=p.apps;
+ document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.protocol===current?"true":"false"));
+ showStep(false);
+}
+function showStep(animate=true){
+ const p=protocols[current],s=p.steps[step];$("stageTitle").textContent=`Etapa ${step+1} — ${s[0]}`;$("stageText").textContent=s[1];$("packet").textContent=s[2];
+ $("stepcount").textContent=`Etapa ${step+1} de ${p.steps.length}`;$("nextBtn").textContent=step===p.steps.length-1?"Voltar ao início ↺":"Próxima etapa →";
+ const packet=$("packet");packet.classList.remove("show","reverse");void packet.offsetWidth;
+ if(animate){packet.classList.add("show");if(s[3]==="reverse"){packet.classList.remove("show");void packet.offsetWidth;packet.classList.add("reverse");}}
+}
+function next(){step=(step+1)%protocols[current].steps.length;showStep(true);}
+$("nextBtn").addEventListener("click",()=>{stop();next();});
+$("resetBtn").addEventListener("click",()=>{stop();step=0;showStep(false);});
+$("playBtn").addEventListener("click",()=>{if(timer){stop();return;} $("playBtn").textContent="⏸ Pausar";next();timer=setInterval(()=>{step=(step+1)%protocols[current].steps.length;showStep(true);},2600);});
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{stop();current=b.dataset.protocol;step=0;render();}));
+render();
+document.getElementById("wear-demo").addEventListener("click",()=>{
+ const bpm=68+Math.floor(Math.random()*24),passos=1800+Math.floor(Math.random()*5400);
+ document.getElementById("wear-reading").textContent=`Frequência cardíaca estimada: ${bpm} bpm · Passos: ${passos} (valores fictícios)`;
+ document.getElementById("wear-payload").textContent=`Tópico: wearable/demo/telemetria\nPayload: ${JSON.stringify({frequencia_cardiaca_bpm:bpm,passos:passos,simulado:true},null,2)}\nAção: PUBLISH (via gateway hipotético)`;
+});
+
+const qosInfo={
+  0:["QoS 0 — No máximo uma vez","Apenas PUBLISH; sem confirmação MQTT. Menor tráfego, mas uma mensagem pode se perder."],
+  1:["QoS 1 — Pelo menos uma vez","PUBLISH seguido de PUBACK. Reenvios podem gerar duplicações; o consumidor deve lidar com elas."],
+  2:["QoS 2 — Exatamente uma vez no fluxo MQTT","PUBLISH, PUBREC, PUBREL e PUBCOMP. Maior custo de comunicação e controle."]
+};
+document.querySelectorAll('.mqtt-qos').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mqtt-qos').forEach(x=>x.classList.toggle('primary',x===b));
+  const [title,body]=qosInfo[b.dataset.qos];
+  document.getElementById('mqtt-qos-description').innerHTML='<strong>'+title+'</strong><p>'+body+'</p>';
+}));
+function mqttMatches(filter,topic){
+  if(!filter||!topic||/[+#]/.test(topic))return null;
+  const f=filter.split('/'),t=topic.split('/');
+  if(f.some((x,i)=>(x.includes('#')&&(x!=='#'||i!==f.length-1))||(x.includes('+')&&x!=='+')))return null;
+  if(topic.startsWith('$')&&!filter.startsWith('$'))return false;
+  let i=0;for(;i<f.length;i++){if(f[i]==='#')return true;if(i>=t.length)return false;if(f[i]!=='+'&&f[i]!==t[i])return false;}return i===t.length;
+}
+function updateMqttMatch(){
+ const v=mqttMatches(document.getElementById('mqtt-filter').value.trim(),document.getElementById('mqtt-topic').value.trim());
+ document.getElementById('mqtt-match-result').textContent=v===null?'Resultado: filtro ou tópico inválido.':v?'Resultado: corresponde — o assinante recebe a publicação.':'Resultado: não corresponde — o assinante não recebe esta publicação.';
+}
+document.getElementById('mqtt-filter').addEventListener('input',updateMqttMatch);
+document.getElementById('mqtt-topic').addEventListener('input',updateMqttMatch);
+updateMqttMatch();
+
+</script>
+</body>
+</html>
