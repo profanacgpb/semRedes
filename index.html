@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Explore fundamentos de IoT e simulações didáticas dos protocolos MQTT, CoAP e HTTP.">
+  <title>Redes de Computadores — Laboratórios IoT</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #16324f;
+      --muted: #52677e;
+      --blue: #1168b2;
+      --line: #dbe7f2;
+      --panel: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #edf7ff, #f7f1ff);
+      color: var(--ink);
+      font: 16px/1.6 Inter, "Segoe UI", Arial, sans-serif;
+    }
+
+    main { max-width: 1080px; margin: auto; padding: 32px 20px 48px; }
+
+    .hero {
+      padding: clamp(24px, 5vw, 48px);
+      border-radius: 24px;
+      background: #0b4775;
+      box-shadow: 0 12px 30px #143c5c22;
+      color: white;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #bde4ff;
+      font-size: .85rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 { margin: 0 0 12px; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; }
+    .hero p:last-child { max-width: 720px; margin: 0; color: #e1f2ff; }
+    .section-heading { margin: 32px 0 14px; }
+    .section-heading h2 { margin: 0 0 4px; font-size: 1.5rem; }
+    .section-heading p { margin: 0; color: var(--muted); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      display: flex;
+      min-height: 228px;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 8px 25px #173c5b0b;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #e8f4ff;
+      color: #135b91;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .card h3 { margin: 0 0 8px; font-size: 1.2rem; }
+    .card p { margin: 0 0 20px; color: var(--muted); }
+
+    .card a {
+      margin-top: auto;
+      color: var(--blue);
+      font-weight: 800;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+
+    a:focus-visible { outline: 3px solid #e89b16; outline-offset: 4px; border-radius: 3px; }
+
+    .note {
+      margin-top: 20px;
+      padding: 16px 18px;
+      border-left: 5px solid #119b78;
+      border-radius: 10px;
+      background: #f2fffa;
+      color: #315a50;
+    }
+
+    footer { margin-top: 28px; color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <p class="eyebrow">Redes de Computadores · Internet das Coisas</p>
+      <h1>Laboratórios interativos de IoT</h1>
+      <p>Aprenda como dispositivos conectados trocam dados. Explore os fundamentos e acompanhe, passo a passo, mensagens e pacotes de MQTT, CoAP e HTTP.</p>
+    </header>
+
+    <section aria-labelledby="conteudos">
+      <div class="section-heading">
+        <h2 id="conteudos">Explore os conteúdos</h2>
+        <p>Escolha um laboratório para começar. As simulações são didáticas e não geram tráfego de rede.</p>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <span class="tag">Fundamentos e protocolos</span>
+          <h3>IoT — teoria e animação</h3>
+          <p>Conheça os conceitos de Internet das Coisas e compare visualmente os fluxos de MQTT, CoAP e HTTP.</p>
+          <a href="IoT_Laboratorio_Interativo_2026_2.html">Abrir laboratório de IoT →</a>
+        </article>
+
+        <article class="card">
+          <span class="tag">Simulador de pacotes</span>
+          <h3>MQTT sobre TCP/IP</h3>
+          <p>Acompanhe conexões, assinatura de tópicos, publicação e diferenças entre os níveis de QoS.</p>
+          <a href="simulador_pacotes_mqtt.html">Abrir simulador MQTT →</a>
+        </article>
+
+        <article class="card">
+          <span class="tag">Simulador de pacotes</span>
+          <h3>CoAP sobre UDP/IPv4</h3>
+          <p>Inspecione requisições e respostas CoAP, encapsulamento, mensagens confirmáveis e retransmissões.</p>
+          <a href="simulador_pacotes_coap.html">Abrir simulador CoAP →</a>
+        </article>
+
+        <article class="card">
+          <span class="tag">Animação passo a passo</span>
+          <h3>MQTT, CoAP e HTTP</h3>
+          <p>Avance ou reproduza uma animação dos caminhos das mensagens nos três protocolos.</p>
+          <a href="animacao_protocolos_mqtt_coap_http.html">Abrir animação dos protocolos →</a>
+        </article>
+      </div>
+    </section>
+
+    <aside class="note">
+      <strong>Sobre os laboratórios:</strong> endereços, portas e pacotes são exemplos ilustrativos. As páginas funcionam localmente no navegador e não abrem conexões de rede.
+    </aside>
+
+    <footer>Material didático de Redes de Computadores · IoT</footer>
+  </main>
+</body>
+</html>
